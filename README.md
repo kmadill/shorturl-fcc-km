@@ -16,8 +16,8 @@ Give it a try [here](https://shorturl-fcc-km.herokuapp.com).
 
 #### Input
 ```
-https://shorturl-fcc-km..herokuapp.com/new/https://www.google.com
-https://shorturl-fcc-km..herokuapp.com/new/https://youtube.com
+https://shorturl-fcc-km.herokuapp.com/new/https://www.google.com
+https://shorturl-fcc-km.herokuapp.com/new/https://youtube.com
 ```
 
 #### Output
