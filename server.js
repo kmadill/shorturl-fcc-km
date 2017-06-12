@@ -45,24 +45,25 @@ app.get("/:linkid", function(req, res) {
 
 
 // Creates a new entry in the DB
-app.get('/new/:newentry*', function(req, res) {
+app.get('/new/:newentry(*)', function(req, res) {
 
-  console.log(req.params);
-  const link = new Link({ original_url: req.params.newentry });
+  const urlToSave = req.originalUrl.replace('/new/', '');
+  const link = new Link({ original_url: urlToSave });
 
   link.save(function (err, link) {
     if(err) {
       console.log(err);
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
-        original_url: req.params.newentry,
+      //  original_url: req.params.newentry,
+        original_url: urlToSave,
         short_url: 'Error. No entry created.'
       }));
       return;
     }
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({
-      original_url: req.params.newentry,
+      original_url: urlToSave,
       short_url: `http://${req.headers['host']}/${link.id}`
     }));
   });
