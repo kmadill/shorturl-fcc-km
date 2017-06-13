@@ -1,9 +1,11 @@
 var express = require("express");
-var mongoose = require("mongoose");
+var mongoose = require("bluebird").promisifyAll(require("mongoose"));
 var path = require("path");
 var http = require("http");
 var autoincrement = require("mongoose-auto-increment");
-//mongoose.Promise = global.Promise;
+var validUrl = require("valid-url");
+
+mongoose.Promise = global.Promise;
 
 var app = express();
 
@@ -28,46 +30,49 @@ app.get("/", function(req, res) {
 
 // Forwards the user to the url that maps to the shortended url
 app.get("/:linkid", function(req, res) {
-  console.log(req.params.linkid);
-
-  Link.findById(req.params.linkid, function (err, found) {
-    if(err) {
-      console.log(err);
+  Link.findById(req.params.linkid)
+    .then(function(found) {
+      res.redirect(found.original_url);
+    })
+    .catch(function(e) {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
-        error: err
+        error: 'Cannot find URL in database. Please try again.'
       }));
-      return;
-    }
-    res.redirect(found.original_url);
-  });
+    });
 });
-
 
 // Creates a new entry in the DB
 app.get('/new/:newentry(*)', function(req, res) {
 
+  //Using req.params.newentry as well as other methods not valid, so parsing URL instead
   const urlToSave = req.originalUrl.replace('/new/', '');
-  const link = new Link({ original_url: urlToSave });
 
-  link.save(function (err, link) {
-    if(err) {
-      console.log(err);
+  //First, check if URL is valid
+  if(!validUrl.isUri(urlToSave)) {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+      error: 'Not a valid URL. Please try again.'
+    }));
+    return;
+  }
+
+  const link = new Link({ original_url: urlToSave }).save()
+    .then(function (link) {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
-      //  original_url: req.params.newentry,
+        original_url: urlToSave,
+        short_url: `http://${req.headers['host']}/${link.id}`
+      }));
+      return;
+    })
+    .catch(function(e) {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
         original_url: urlToSave,
         short_url: 'Error. No entry created.'
       }));
-      return;
-    }
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify({
-      original_url: urlToSave,
-      short_url: `http://${req.headers['host']}/${link.id}`
-    }));
-  });
-
+    });
 });
 
 var port = process.env.PORT || 1337;
